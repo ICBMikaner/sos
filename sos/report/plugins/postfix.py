@@ -8,6 +8,7 @@
 
 from sos.report.plugins import Plugin, RedHatPlugin, DebianPlugin, UbuntuPlugin
 
+import os
 import re
 
 
@@ -74,7 +75,8 @@ class Postfix(Plugin):
                         continue
 
                     # sieving
-                    if option.group(1).strip() in forbid_attributes:
+                    attribute = option.group(1).strip()
+                    if attribute in forbid_attributes:
                         filepath = option.group(2).strip()
                         # ignore no filepath
                         if len(filepath) == 0:
@@ -82,9 +84,21 @@ class Postfix(Plugin):
                         # remove prefix
                         if filepath.startswith(prefix):
                             filepath = filepath[len(prefix):]
+                        # ignore non-existent files
+                        if not os.path.exists(filepath):
+                            # warning log for traceability
+                            msg = "'%s' has non-existent path '%s'" % \
+                                    (attribute, filepath)
+                            msg = "[plugin:%s] %s" % (self.name(), msg)
+                            self.soslog.warning(msg)
+                            continue
                         fp.append(filepath)
-        finally:
-            return fp
+        except Exception as e:
+            # error log
+            msg = "catch '%s' in forbidden_password_files()" % e.args[0]
+            msg = "[plugin:%s] %s" % (self.name(), msg)
+            self.soslog.error(msg)
+        return fp
 
     def setup(self):
         self.add_copy_spec([
