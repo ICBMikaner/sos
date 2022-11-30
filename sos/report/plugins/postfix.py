@@ -86,18 +86,12 @@ class Postfix(Plugin):
                             filepath = filepath[len(prefix):]
                         # ignore non-existent files
                         if not os.path.exists(filepath):
-                            # warning log for traceability
-                            msg = "'%s' has non-existent path '%s'" % \
-                                    (attribute, filepath)
-                            msg = "[plugin:%s] %s" % (self.name(), msg)
-                            self.soslog.warning(msg)
                             continue
                         fp.append(filepath)
         except Exception as e:
             # error log
-            msg = "catch '%s' in forbidden_password_files()" % e.args[0]
-            msg = "[plugin:%s] %s" % (self.name(), msg)
-            self.soslog.error(msg)
+            msg = f"Error parsing main.cf: {e.args[0]}"
+            self._log_error(msg)
         return fp
 
     def setup(self):
